@@ -1,6 +1,6 @@
 {
   "name": "vue-build-js",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "vue文件编译为方便静态加载的js工程的cli",
   "main": "index.js",
   "bin": "./bin/main.js",
@@ -13,8 +13,8 @@
     "email": "a2214839296a@gmail.com"
   },
   "license": "CC0-1.0",
-  "homepage": "https://github.com/onion878/GenerateTool",
-  "url": "http://onion.zhouhongxing.cn",
+  "homepage": "https://github.com/onion878/vue-build-js",
+  "url": "https://github.com/onion878/vue-build-js",
   "dependencies": {
     "commander": "^7.2.0",
     "tracer": "^1.1.4",

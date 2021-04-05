@@ -1,0 +1,110 @@
+let file = "";
+
+const babel = require("@babel/core");
+const path = require('path')
+const Chokidar = require('chokidar');
+const fs = require('fs');
+const log = require('tracer').colorConsole();
+
+module.exports = function (f, arg) {
+    file = f;
+    if (arg == 'all') {
+        getFiles(path.join(file, '/'), ".vue");
+        return;
+    }
+    var watcher = Chokidar.watch([path.join(file, '/')], {
+        // ignored: /(^|[\/\\])\../, 
+        persistent: true,
+        usePolling: true,
+    });
+    var watchAction = function ({
+        event,
+        eventPath
+    }) {
+        if (path.extname(eventPath) === '.vue') {
+            log.info(`Has been ${event}ed, file: ${eventPath}`);
+            // 这里进行文件更改后的操作
+            compileFile(eventPath);
+        }
+    }
+    watcher
+        .on('ready', () => log.info(`Initial scan complete. Ready for changes.`))
+        .on('add', p => log.info(`File ${p} has been added`))
+        .on('change', p => watchAction({
+            event: 'change',
+            eventPath: p
+        }))
+        .on('unlink', p => watchAction({
+            event: 'remove',
+            eventPath: p
+        }));
+}
+
+function getFiles(url, ext) {
+    fs.readdir(url, function (err, files) {
+        if (err) {
+            return console.error(err);
+        }
+        files.forEach(function (file) {
+            fs.stat(url + file, (err, stats) => {
+                if (stats.isFile()) {
+                    if (path.extname(url + file) === ext) {
+                        compileFile(url + file);
+                    }
+                } else if (stats.isDirectory()) {
+                    getFiles(url + file + '/', ext)
+                }
+            })
+
+        })
+    })
+}
+
+function compileJs(code) {
+    return new Promise(resolve => {
+        babel.transformAsync(code, {
+            presets: ['@babel/preset-env'],
+            minified: true
+        }).then(d => {
+            resolve(d.code);
+        });
+    });
+}
+
+function compileFile(f) {
+    const content = fs.readFileSync(f).toString();
+    const script = content.split('<script>')[1].split('</script>')[0].replace('export default', '').trim();
+    let html = "";
+    content.split('\n').some((c, i) => {
+        if (c.indexOf('<script>') > -1) {
+            return true;
+        }
+        html = html + "\n" + c;
+    });
+
+    let style = "",
+        flag = false;
+    content.split('\n').some((c, i) => {
+        if (c.indexOf('</style>') > -1) {
+            return true;
+        }
+        if (flag) {
+            style = style + "\n" + c;
+        }
+        if (c.indexOf('<style>') > -1) {
+            flag = true;
+        }
+    });
+    const data = {
+        script: script,
+        style: style,
+        html: html
+    };
+    compileJs('const _default_script = ' + script + '\n_default_script;').then(d => {
+        data.script = d;
+        compileJs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
+            fs.writeFileSync(f.replace('.vue', '.min.js'), d);
+            log.debug(f + " 编译完成!");
+        });
+    });
+}

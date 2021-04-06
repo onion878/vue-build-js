@@ -1,5 +1,5 @@
 ## 说明 ##
-该工程是为了将.vue文件编译成js,同时将es6的语法编译为es5,目前style未进行处理
+该工程是为了将.vue文件编译成js,同时将es6的语法编译为es5
 
 ## 安装 ##
 `npm i vue-build-js -D`
@@ -24,6 +24,7 @@ function getVueFile(file, resolve) {
         } = eval(v);
         const data = eval(script);
         data.template = html;
+        // style需要放入head里面
         resolve(data);
     });
 }

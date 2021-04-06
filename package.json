@@ -1,13 +1,17 @@
 {
   "name": "vue-build-js",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "vue文件编译为方便静态加载的js工程的cli",
   "main": "index.js",
   "bin": "./bin/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["vue", "vue-build", "compile-vue"],
+  "keywords": [
+    "vue",
+    "vue-build",
+    "compile-vue"
+  ],
   "author": {
     "name": "Onion",
     "email": "a2214839296a@gmail.com"
@@ -19,6 +23,8 @@
     "commander": "^7.2.0",
     "tracer": "^1.1.4",
     "chokidar": "^3.5.1",
+    "dntly-cssjson": "^3.2.1",
+    "uuid": "^8.3.2",
     "@babel/core": "^7.13.14",
     "@babel/preset-env": "^7.13.12"
   }

@@ -5,6 +5,11 @@ const path = require('path')
 const Chokidar = require('chokidar');
 const fs = require('fs');
 const log = require('tracer').colorConsole();
+// 引入cheerio模块
+const DntlyCssJson = require('dntly-cssjson');
+const {
+    v4: uuidv4
+} = require('uuid');
 
 module.exports = function (f, arg) {
     file = f;
@@ -95,10 +100,25 @@ function compileFile(f) {
             flag = true;
         }
     });
+    // 处理style
+    const classId = uuidv4();
+    const css = DntlyCssJson.cssToJson(style);
+    for (let k in css) {
+        if (Object.hasOwnProperty.call(css, k)) {
+            const e = css[k];
+            const newKey = [];
+            k.split(',').forEach(d => {
+                newKey.push('.' + classId + ' ' + d);
+            });
+            css[newKey.join(',')] = e;
+            delete css[k];
+        }
+    }
+
     const data = {
         script: script,
-        style: style,
-        html: html
+        style: DntlyCssJson.jsonToCss(css),
+        html: `<div class="${classId}">${html}</div>`
     };
     compileJs('const _default_script = ' + script + '\n_default_script;').then(d => {
         data.script = d;

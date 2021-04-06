@@ -101,7 +101,7 @@ function compileFile(f) {
         }
     });
     // 处理style
-    const classId = uuidv4();
+    const classId = '_' + uuidv4();
     const css = DntlyCssJson.cssToJson(style);
     for (let k in css) {
         if (Object.hasOwnProperty.call(css, k)) {

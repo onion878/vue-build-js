@@ -1,6 +1,7 @@
 let file = "",
     target;
 
+const app_path = __dirname.replace(/\\/g, '/');
 const babel = require("@babel/core");
 const path = require('path')
 const Chokidar = require('chokidar');
@@ -170,25 +171,33 @@ function compileFile(f) {
         style: DntlyCssJson.jsonToCss(css),
         html: `<div class="${classId}">${html}</div>`
     };
+    const uniqueKey = 'vue_' + f.replace(/\\/g, '/').replace(app_path, '').replace('.vue', '').replace(/\./g, '').replace(/\//g, '_');
     if (scriptStart == '<script>') {
-        compileJs(importList + 'const _default_script = ' + script + '\n_default_script;').then(d => {
+        compileJs(importList + 'const _default_script = ' + script).then(d => {
             data.script = d;
             compileJs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
-                saveFile(f.replace('.vue', '.min.js'), d);
+                const list = eval(d);
+                saveFile(f.replace('.vue', '.min.js'), `var ${uniqueKey} = (function () {` + list.script + '\nvar _config=' + JSON.stringify({
+                    template: list.html,
+                    style: list.style
+                }) + ';_default_script.template = _config["template"];' + '_default_script.style = _config["style"];return _default_script;})();');
                 log.debug(f + " 编译完成!");
             });
         });
     } else {
-        compileTs(importList + 'const _default_script = ' + script + '\n_default_script;').then(d => {
+        compileTs(importList + 'const _default_script = ' + script).then(d => {
             data.script = d;
             compileTs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
-                saveFile(f.replace('.vue', '.min.js'), d);
+                const list = eval(d);
+                saveFile(f.replace('.vue', '.min.js'), `var ${uniqueKey} = (function () {` + list.script + '\nvar _config=' + JSON.stringify({
+                    template: list.html,
+                    style: list.style
+                }) + ';_default_script.template = _config["template"];' + '_default_script.style = _config["style"];return _default_script;})();');
                 log.debug(f + " 编译完成!");
             });
         });
     }
 }
-const app_path = __dirname.replace(/\\/g, '/');
 
 function saveFile(p, content) {
     let f = p.replace(/\\/g, '/');

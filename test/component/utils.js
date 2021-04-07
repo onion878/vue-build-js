@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.getName=getName;console.log(123);function getName(){return"My name is  Onion"}

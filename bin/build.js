@@ -1,4 +1,5 @@
-let file = "";
+let file = "",
+    target;
 
 const babel = require("@babel/core");
 const path = require('path')
@@ -8,12 +9,15 @@ const log = require('tracer').colorConsole();
 // 引入cheerio模块
 const DntlyCssJson = require('dntly-cssjson');
 
-const {v4: uuidv4} = require('uuid');
+const {
+    v4: uuidv4
+} = require('uuid');
 
-module.exports = function (f, arg) {
+module.exports = function (f, arg, output) {
     file = f;
+    target = output;
     if (arg == 'all') {
-        getFiles(path.join(file, '/'), ".vue");
+        getFiles(path.join(file, '/'), [".vue", ".ts"]);
         return;
     }
     const watcher = Chokidar.watch([path.join(file, '/')], {
@@ -22,13 +26,21 @@ module.exports = function (f, arg) {
         usePolling: true,
     });
     const watchAction = function ({
-                                      event,
-                                      eventPath
-                                  }) {
+        event,
+        eventPath
+    }) {
         if (path.extname(eventPath) === '.vue') {
             log.info(`Has been ${event}ed, file: ${eventPath}`);
             // 这里进行文件更改后的操作
             compileFile(eventPath);
+        }
+        if (path.extname(eventPath) === '.ts') {
+            log.info(`Has been ${event}ed, file: ${eventPath}`);
+            // 这里进行文件更改后的操作
+            compileTs(fs.readFileSync(eventPath)).then(d => {
+                saveFile(eventPath.replace('.ts', '.min.js'), d);
+                log.debug(eventPath + " 编译完成!");
+            });
         }
     }
     watcher
@@ -52,9 +64,20 @@ function getFiles(url, ext) {
         files.forEach(function (file) {
             fs.stat(url + file, (err, stats) => {
                 if (stats.isFile()) {
-                    if (path.extname(url + file) === ext) {
-                        compileFile(url + file);
-                    }
+                    ext.forEach(e => {
+                        if (path.extname(url + file) === e) {
+                            if (e == '.vue') {
+                                compileFile(url + file);
+                            }
+                            if (e == '.ts') {
+                                const f = url + file;
+                                compileTs(fs.readFileSync(f)).then(d => {
+                                    saveFile(f.replace('.ts', '.min.js'), d);
+                                    log.debug(f + " 编译完成!");
+                                });
+                            }
+                        }
+                    })
                 } else if (stats.isDirectory()) {
                     getFiles(url + file + '/', ext)
                 }
@@ -88,11 +111,25 @@ function compileTs(code) {
 
 function compileFile(f) {
     const content = fs.readFileSync(f).toString();
-    let scriptStart = '<script>';
+    let scriptStart = '<script>',
+        scriptFlag = false,
+        importList = '',
+        script = null;
     if (content.indexOf('<script lang="ts">') > -1) {
         scriptStart = '<script lang="ts">';
+        scriptFlag = true;
     }
-    let script = content.split(scriptStart)[1].split('</script>')[0].replace('export default', '').trim();
+    if (content.indexOf('<script>') > -1) {
+        scriptStart = '<script>';
+        scriptFlag = true;
+    }
+    if (scriptFlag === true) {
+        let scriptAll = content.split(scriptStart)[1].split('</script>')[0];
+        let a = scriptAll.split('export default');
+        importList = a[0];
+        script = a[1];
+    }
+
     let html = "";
     content.split('\n').some((c, i) => {
         if (c.indexOf(scriptStart) > -1) {
@@ -100,7 +137,6 @@ function compileFile(f) {
         }
         html = html + "\n" + c;
     });
-
     let style = "",
         flag = false;
     content.split('\n').some((c, i) => {
@@ -135,20 +171,39 @@ function compileFile(f) {
         html: `<div class="${classId}">${html}</div>`
     };
     if (scriptStart == '<script>') {
-        compileJs('const _default_script = ' + script + '\n_default_script;').then(d => {
+        compileJs(importList + 'const _default_script = ' + script + '\n_default_script;').then(d => {
             data.script = d;
             compileJs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
-                fs.writeFileSync(f.replace('.vue', '.min.js'), d);
+                saveFile(f.replace('.vue', '.min.js'), d);
                 log.debug(f + " 编译完成!");
             });
         });
     } else {
-        compileTs('const _default_script = ' + script + '\n_default_script;').then(d => {
+        compileTs(importList + 'const _default_script = ' + script + '\n_default_script;').then(d => {
             data.script = d;
             compileTs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
-                fs.writeFileSync(f.replace('.vue', '.min.js'), d);
+                saveFile(f.replace('.vue', '.min.js'), d);
                 log.debug(f + " 编译完成!");
             });
         });
+    }
+}
+const app_path = __dirname.replace(/\\/g, '/');
+
+function saveFile(p, content) {
+    let f = p.replace(/\\/g, '/');
+    if (target) {
+        const newFile = path.join(app_path, target).replace(/\\/g, '/');
+        f = newFile + f.replace(file, '');
+        mkdirsSync(path.dirname(f));
+    }
+    fs.writeFileSync(f, content);
+}
+
+function mkdirsSync(dirname) {
+    if (fs.existsSync(dirname)) return true;
+    if (mkdirsSync(path.dirname(dirname))) {
+        fs.mkdirSync(dirname);
+        return true;
     }
 }

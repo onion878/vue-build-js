@@ -11,11 +11,18 @@
     <van-tag type="danger">标签</van-tag>
     <van-tag type="warning">标签</van-tag>
     <van-tag type="success">Hello onion</van-tag>
+    <a-list></a-list>
   </div>
 </template>
 
 <script>
+import { getName } from "./component/utils";
+import List from "./component/list.vue";
+
 export default {
+  components: {
+    "a-list": List,
+  },
   data() {
     return {
       name: "onion",
@@ -31,6 +38,7 @@ export default {
     const a = "asdasd";
     this.name = this.$route.query.name;
     console.log(a);
+    console.log(getName());
     vant.Dialog.alert({
       title: "标题",
       message: "弹窗内容",
@@ -42,7 +50,8 @@ export default {
 </script>
 
 <style>
-h1 span,input {
+h1 span,
+input {
   font-family: "楷体";
   color: red;
 }

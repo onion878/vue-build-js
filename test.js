@@ -1,3 +1,3 @@
 const build = require("./bin/build");
 
-build("./test", 'all')
+build("./test", 'all', 'qwe')

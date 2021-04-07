@@ -7,9 +7,8 @@ const fs = require('fs');
 const log = require('tracer').colorConsole();
 // 引入cheerio模块
 const DntlyCssJson = require('dntly-cssjson');
-const {
-    v4: uuidv4
-} = require('uuid');
+
+const {v4: uuidv4} = require('uuid');
 
 module.exports = function (f, arg) {
     file = f;
@@ -17,15 +16,15 @@ module.exports = function (f, arg) {
         getFiles(path.join(file, '/'), ".vue");
         return;
     }
-    var watcher = Chokidar.watch([path.join(file, '/')], {
-        // ignored: /(^|[\/\\])\../, 
+    const watcher = Chokidar.watch([path.join(file, '/')], {
+        // ignored: /(^|[\/\\])\../,
         persistent: true,
         usePolling: true,
     });
-    var watchAction = function ({
-        event,
-        eventPath
-    }) {
+    const watchAction = function ({
+                                      event,
+                                      eventPath
+                                  }) {
         if (path.extname(eventPath) === '.vue') {
             log.info(`Has been ${event}ed, file: ${eventPath}`);
             // 这里进行文件更改后的操作
@@ -76,12 +75,27 @@ function compileJs(code) {
     });
 }
 
+function compileTs(code) {
+    return new Promise(resolve => {
+        const d = babel.transformSync(code, {
+            filename: 'cache.build.ts',
+            presets: ['@babel/preset-env', '@babel/preset-typescript'],
+            minified: true
+        });
+        resolve(d.code);
+    });
+}
+
 function compileFile(f) {
     const content = fs.readFileSync(f).toString();
-    const script = content.split('<script>')[1].split('</script>')[0].replace('export default', '').trim();
+    let scriptStart = '<script>';
+    if (content.indexOf('<script lang="ts">') > -1) {
+        scriptStart = '<script lang="ts">';
+    }
+    let script = content.split(scriptStart)[1].split('</script>')[0].replace('export default', '').trim();
     let html = "";
     content.split('\n').some((c, i) => {
-        if (c.indexOf('<script>') > -1) {
+        if (c.indexOf(scriptStart) > -1) {
             return true;
         }
         html = html + "\n" + c;
@@ -120,11 +134,21 @@ function compileFile(f) {
         style: DntlyCssJson.jsonToCss(css),
         html: `<div class="${classId}">${html}</div>`
     };
-    compileJs('const _default_script = ' + script + '\n_default_script;').then(d => {
-        data.script = d;
-        compileJs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
-            fs.writeFileSync(f.replace('.vue', '.min.js'), d);
-            log.debug(f + " 编译完成!");
+    if (scriptStart == '<script>') {
+        compileJs('const _default_script = ' + script + '\n_default_script;').then(d => {
+            data.script = d;
+            compileJs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
+                fs.writeFileSync(f.replace('.vue', '.min.js'), d);
+                log.debug(f + " 编译完成!");
+            });
         });
-    });
+    } else {
+        compileTs('const _default_script = ' + script + '\n_default_script;').then(d => {
+            data.script = d;
+            compileTs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
+                fs.writeFileSync(f.replace('.vue', '.min.js'), d);
+                log.debug(f + " 编译完成!");
+            });
+        });
+    }
 }

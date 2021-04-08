@@ -1,4 +1,5 @@
-console.log(123);
+import {getOutData} from './help'
+
 export function getName(): string {
-    return "My name is  Onion";
+    return "My name is  Onion" + getOutData("list");
 }

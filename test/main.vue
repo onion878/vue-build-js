@@ -15,7 +15,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import { getName } from "./component/utils";
 import List from "./component/list.vue";
 
@@ -31,20 +31,20 @@ export default {
   },
   methods: {
     show() {
-      vant.Notify("通知内容");
+      // vant.Notify("通知内容");
     },
   },
   mounted() {
-    const a = "asdasd";
+    const a: string = "asdasd";
     this.name = this.$route.query.name;
     console.log(a);
     console.log(getName());
-    vant.Dialog.alert({
-      title: "标题",
-      message: "弹窗内容",
-    }).then(() => {
+    // vant.Dialog.alert({
+      // title: "标题",
+      // message: "弹窗内容",
+    // }).then(() => {
       // on close
-    });
+    // });
   },
 };
 </script>

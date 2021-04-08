@@ -13,7 +13,6 @@ const DntlyCssJson = require('dntly-cssjson');
 const {
     v4: uuidv4
 } = require('uuid');
-
 module.exports = function (f, arg, output) {
     file = f;
     target = output;
@@ -39,7 +38,7 @@ module.exports = function (f, arg, output) {
             log.info(`Has been ${event}ed, file: ${eventPath}`);
             // 这里进行文件更改后的操作
             compileTs(fs.readFileSync(eventPath)).then(d => {
-                saveFile(eventPath.replace('.ts', '.min.js'), d);
+                saveFile(eventPath.replace('.ts', '.min.js'), '(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();');
                 log.debug(eventPath + " 编译完成!");
             });
         }
@@ -73,7 +72,7 @@ function getFiles(url, ext) {
                             if (e == '.ts') {
                                 const f = url + file;
                                 compileTs(fs.readFileSync(f)).then(d => {
-                                    saveFile(f.replace('.ts', '.min.js'), d);
+                                    saveFile(f.replace('.ts', '.min.js'), '(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();');
                                     log.debug(f + " 编译完成!");
                                 });
                             }

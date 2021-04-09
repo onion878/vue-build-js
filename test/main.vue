@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts">
-import { getName } from "./component/utils";
+import { getName } from './component/utils';
 import List from "./component/list.vue";
 
 export default {

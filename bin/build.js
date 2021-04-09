@@ -38,7 +38,8 @@ module.exports = function (f, arg, output) {
             log.info(`Has been ${event}ed, file: ${eventPath}`);
             // 这里进行文件更改后的操作
             compileTs(fs.readFileSync(eventPath)).then(d => {
-                saveFile(eventPath.replace('.ts', '.min.js'), '(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();');
+                const newFile = eventPath.replace('.ts', '.min.js');
+                saveFile(newFile, changeContent('(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();', newFile));
                 log.debug(eventPath + " 编译完成!");
             });
         }
@@ -72,7 +73,8 @@ function getFiles(url, ext) {
                             if (e == '.ts') {
                                 const f = url + file;
                                 compileTs(fs.readFileSync(f)).then(d => {
-                                    saveFile(f.replace('.ts', '.min.js'), '(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();');
+                                    const newFile = f.replace('.ts', '.min.js');
+                                    saveFile(newFile, changeContent('(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();', newFile));
                                     log.debug(f + " 编译完成!");
                                 });
                             }
@@ -170,16 +172,16 @@ function compileFile(f) {
         style: DntlyCssJson.jsonToCss(css),
         html: `<div class="${classId}">${html}</div>`
     };
-    const uniqueKey = 'vue_' + f.replace(/\\/g, '/').replace(app_path, '').replace('.vue', '').replace(/\./g, '').replace(/\//g, '_');
     if (scriptStart == '<script>') {
         compileJs(importList + 'const _default_script = ' + script).then(d => {
             data.script = d;
             compileJs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
                 const list = eval(d);
-                saveFile(f.replace('.vue', '.min.js'), `var ${uniqueKey} = (function () {` + list.script + '\nvar _config=' + JSON.stringify({
+                const newFile = f.replace('.vue', '.min.js');
+                saveFile(newFile, changeContent(`(function () {` + list.script + '\nvar _config=' + JSON.stringify({
                     template: list.html,
                     style: list.style
-                }) + ';_default_script.template = _config["template"];' + '_default_script.style = _config["style"];return _default_script;})();');
+                }) + ';_default_script.template = _config["template"];' + '_default_script.style = _config["style"];define(function () {return _default_script;});})();', newFile));
                 log.debug(f + " 编译完成!");
             });
         });
@@ -188,10 +190,11 @@ function compileFile(f) {
             data.script = d;
             compileTs('const _default_template = ' + JSON.stringify(data) + '\n_default_template;').then(d => {
                 const list = eval(d);
-                saveFile(f.replace('.vue', '.min.js'), `var ${uniqueKey} = (function () {` + list.script + '\nvar _config=' + JSON.stringify({
+                const newFile = f.replace('.vue', '.min.js');
+                saveFile(newFile, changeContent(`(function () {` + list.script + '\nvar _config=' + JSON.stringify({
                     template: list.html,
                     style: list.style
-                }) + ';_default_script.template = _config["template"];' + '_default_script.style = _config["style"];return _default_script;})();');
+                }) + ';_default_script.template = _config["template"];' + '_default_script.style = _config["style"];define(function () {return _default_script;});})();', newFile));
                 log.debug(f + " 编译完成!");
             });
         });
@@ -214,4 +217,24 @@ function mkdirsSync(dirname) {
         fs.mkdirSync(dirname);
         return true;
     }
+}
+
+function changeContent(str, file) {
+    const reg = /require((\S*)")/g;
+    const res = str.match(reg);
+    if (res == null) return str;
+    const requireList = [];
+    res.forEach(r => {
+        if (r.indexOf('.vue') > -1) {
+            const o = r.substring(0, r.length - 5) + '.min"';
+            requireList.push(o.substring(9, o.length - 1));
+            str = str.replace(r, o);
+        } else {
+            const o = r.substring(0, r.length - 1) + '.min"';
+            requireList.push(o.substring(9, o.length - 1));
+            str = str.replace(r, o);
+        }
+    });
+    saveFile(file.replace('.min.js', '.config.json'), JSON.stringify(requireList));
+    return str;
 }

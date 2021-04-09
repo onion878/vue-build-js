@@ -40,7 +40,7 @@ var routes = [
     {
         path: "/main",
         component: (resolve) => {
-            return getVueFile('./main', resolve);
+            return getVueFile('./dist/main', resolve);
         }
     }
 ]

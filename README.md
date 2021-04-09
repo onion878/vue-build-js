@@ -21,9 +21,17 @@ vue-build-js ./path watch  -o dist
 // 通过请求获取到编译后的文件
 function getVueFile(file, resolve) {
     axios.get(file + '.config.json').then(function (c) {
-        requirejs([file + '.min.js'].concat(c.data), function (main) {
+        const list = file.split('/');
+        requirejs.config({
+            baseUrl: file.replace(list[list.length - 1], ''),
+        });
+        requirejs(c.data.concat([file + '.min.js']), function (a, main) {
+            var a = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                a[_i] = arguments[_i];
+            }
             // main.style需要放入head里面
-            resolve(main);
+            resolve(a[a.length - 1]);
         });
     });
 }

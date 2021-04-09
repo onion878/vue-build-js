@@ -1,7 +1,7 @@
 let file = "",
     target;
 
-const app_path = __dirname.replace(/\\/g, '/');
+const app_path = __dirname.replace(/\\/g, '/').replace('/node_modules/vue-build-js/bin', '');
 const babel = require("@babel/core");
 const path = require('path')
 const Chokidar = require('chokidar');
@@ -205,9 +205,10 @@ function saveFile(p, content) {
     let f = p.replace(/\\/g, '/');
     if (target) {
         const newFile = path.join(app_path, target).replace(/\\/g, '/');
-        f = newFile + f.replace(file, '');
+        f = newFile + f.replace(file.replace('./', ''), '');
         mkdirsSync(path.dirname(f));
     }
+    log.info('生成文件:' + f);
     fs.writeFileSync(f, content);
 }
 
@@ -222,8 +223,11 @@ function mkdirsSync(dirname) {
 function changeContent(str, file) {
     const reg = /require((\S*)")/g;
     const res = str.match(reg);
-    if (res == null) return str;
     const requireList = [];
+    if (res == null) {
+        saveFile(file.replace('.min.js', '.config.json'), JSON.stringify(requireList));
+        return str;
+    }
     res.forEach(r => {
         if (r.indexOf('.vue') > -1) {
             const o = r.substring(0, r.length - 5) + '.min"';

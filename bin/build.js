@@ -160,13 +160,19 @@ function compileFile(f) {
             const e = css[k];
             const newKey = [];
             k.split(',').forEach(d => {
-                newKey.push('.' + classId + ' ' + d);
+                const prefix = d.trim().substring(0, 1);
+                if (prefix != '@' && prefix != ':') {
+                    newKey.push('.' + classId + ' ' + d);
+                }
             });
             css[newKey.join(',')] = e;
             delete css[k];
         }
     }
 
+    if (script == null) {
+        script = "{}";
+    }
     const data = {
         script: script,
         style: DntlyCssJson.jsonToCss(css),

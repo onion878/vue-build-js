@@ -27,9 +27,9 @@ module.exports = function (f, arg, output) {
         usePolling: true,
     });
     const watchAction = function ({
-                                      event,
-                                      eventPath
-                                  }) {
+        event,
+        eventPath
+    }) {
         if (path.extname(eventPath) === '.vue') {
             log.info(`Has been ${event}ed, file: ${eventPath}`);
             // 这里进行文件更改后的操作
@@ -235,14 +235,18 @@ function getRequireList(str) {
         };
     }
     res.forEach(r => {
-        if (r.indexOf('.vue') > -1) {
-            const o = r.substring(0, r.length - 5) + '.min"';
-            requireList.push(path.join(o.substring(9, o.length - 1)).replace(/\\/g, '/'));
-            str = str.replace(r, o);
+        if (r.substring(9, r.length - 1).substring(0, 1) != '.') {
+            str = str.replace(r + ")", r.substring(9, r.length - 1));
         } else {
-            const o = r.substring(0, r.length - 1) + '.min"';
-            requireList.push(path.join(o.substring(9, o.length - 1)).replace(/\\/g, '/'));
-            str = str.replace(r, o);
+            if (r.indexOf('.vue') > -1) {
+                const o = r.substring(0, r.length - 5) + '.min"';
+                requireList.push(path.join(o.substring(9, o.length - 1)).replace(/\\/g, '/'));
+                str = str.replace(r, o);
+            } else {
+                const o = r.substring(0, r.length - 1) + '.min"';
+                requireList.push(path.join(o.substring(9, o.length - 1)).replace(/\\/g, '/'));
+                str = str.replace(r, o);
+            }
         }
     });
     return {

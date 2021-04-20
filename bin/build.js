@@ -270,6 +270,16 @@ function readAllImport(list, f, origin) {
         const newPath = path.join(path.dirname(f), e.replace('.min.min', '.min'));
         let c = getTargetPath(newPath) + '.js';
         data.push(path.relative(origin, c).substring(3).replace('.js', '').replace(/\\/g, '/'));
+        if (!fs.existsSync(c)) {
+            let l = newPath.replace(/\\/g, '/').replace('.min', '.vue');
+            if (fs.existsSync(l)) {
+                compileFile(l);
+            }
+            l = newPath.replace(/\\/g, '/').replace('.min', '.ts');
+            if (fs.existsSync(l)) {
+                compileTs(l);
+            }
+        }
         const d = fs.readFileSync(c).toString();
         const b = getRequireList(d);
         data = readAllImport(b.list, newPath, origin).concat(data);

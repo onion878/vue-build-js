@@ -277,7 +277,10 @@ function readAllImport(list, f, origin) {
             }
             l = newPath.replace(/\\/g, '/').replace('.min', '.ts');
             if (fs.existsSync(l)) {
-                compileTs(l);
+                const f = l;
+                const d = compileTs(fs.readFileSync(f));
+                const newFile = f.replace('.ts', '.min.js');
+                saveFile(newFile, changeContent('(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();', newFile));
             }
         }
         const d = fs.readFileSync(c).toString();

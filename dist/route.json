@@ -1,0 +1,10 @@
+[
+  {
+    "path": "/list",
+    "component": "./component/list"
+  },
+  {
+    "path": "/test",
+    "component": "./component/test"
+  }
+]

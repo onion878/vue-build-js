@@ -1,9 +1,10 @@
 <template>
-    <h1>Hello Onion</h1>
+    <h1>Hello Onion {{name}}</h1>
 </template>
 
-<script>
+<script lang="ts">
 import Test from './test.vue';
+import {getName} from "./utils";
 
 export default {
   components: {
@@ -23,8 +24,8 @@ export default {
   mounted() {
     const a = "asdasd";
     this.name = this.$route.query.name;
+    this.name = getName();
     console.log(a);
-    console.log(getName());
     // vant.Dialog.alert({
       // title: "标题",
       // message: "弹窗内容",

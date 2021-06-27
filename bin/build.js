@@ -26,10 +26,7 @@ module.exports = function (f, arg, output) {
         persistent: true,
         usePolling: true,
     });
-    const watchAction = function ({
-        event,
-        eventPath
-    }) {
+    const watchAction = function ({event, eventPath}) {
         if (path.extname(eventPath) === '.vue') {
             log.info(`Has been ${event}ed, file: ${eventPath}`);
             // 这里进行文件更改后的操作
@@ -259,7 +256,15 @@ function getRequireList(str) {
 function changeContent(str, f) {
     const d = getRequireList(str);
     const data = readAllImport(d.list, f, getTargetPath(f));
-    saveFile(f.replace('.min.js', '.config.json'), JSON.stringify(data));
+    const modules = {};
+    const listModules = [];
+    data.forEach((l, i) => {
+        if (modules[l] == null) {
+            modules[l] = i;
+            listModules.push(l);
+        }
+    });
+    saveFile(f.replace('.min.js', '.config.json'), JSON.stringify(listModules));
     return d.str;
 }
 

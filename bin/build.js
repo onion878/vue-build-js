@@ -221,7 +221,7 @@ function mkdirsSync(dirname) {
 }
 
 // 获取文件中的依赖
-function getRequireList(str) {
+function getRequireList(str, f) {
     const reg = /require((\S*)")/g;
     const res = str.match(reg);
     let requireList = [];
@@ -240,12 +240,23 @@ function getRequireList(str) {
                 requireList.push(path.join(o.substring(9, o.length - 1)).replace(/\\/g, '/'));
                 str = str.replace(r, o);
             } else {
-                const o = r.substring(0, r.length - 1) + '.min"';
-                requireList.push(path.join(o.substring(9, o.length - 1)).replace(/\\/g, '/'));
+                let o = r.substring(0, r.length - 1) + '.min"';
+                const e = path.join(o.substring(9, o.length - 1)).replace(/\\/g, '/');
+                let vp = path.join(app_path, path.dirname(f), e);
+                vp = vp.substring(0, vp.length - 4);
+                if (fs.existsSync(vp + '.js')) {
+                    o = r;
+                    requireList.push(e.substring(0, e.length - 4));
+                } else {
+                    requireList.push(e);
+                }
                 str = str.replace(r, o);
             }
         }
     });
+    requireList.forEach((e, i) => {
+
+    })
     return {
         list: requireList,
         str: str
@@ -254,7 +265,7 @@ function getRequireList(str) {
 
 // 生成依赖配置文件
 function changeContent(str, f) {
-    const d = getRequireList(str);
+    const d = getRequireList(str, f);
     const data = readAllImport(d.list, f, getTargetPath(f));
     const modules = {};
     const listModules = [];
@@ -272,25 +283,34 @@ function changeContent(str, f) {
 function readAllImport(list, f, origin) {
     let data = [];
     list.forEach(e => {
-        const newPath = path.join(path.dirname(f), e.replace('.min.min', '.min'));
-        let c = getTargetPath(newPath) + '.js';
-        data.push(path.relative(origin, c).substring(3).replace('.js', '').replace(/\\/g, '/'));
-        if (!fs.existsSync(c)) {
-            let l = newPath.replace(/\\/g, '/').replace('.min', '.vue');
-            if (fs.existsSync(l)) {
-                compileFile(l);
+        let vp = path.join(app_path, path.dirname(f), e);
+        // 处理动态引入的js库
+        if (fs.existsSync(vp + '.js')) {
+            const newPath = path.join(path.dirname(f), e);
+            let c = getTargetPath(newPath) + '.js';
+            fs.writeFileSync(c, fs.readFileSync(vp + '.js'));
+            data.push(path.relative(origin, c).substring(3).replace('.js', '').replace(/\\/g, '/'));
+        } else {
+            const newPath = path.join(path.dirname(f), e.replace('.min.min', '.min'));
+            let c = getTargetPath(newPath) + '.js';
+            data.push(path.relative(origin, c).substring(3).replace('.js', '').replace(/\\/g, '/'));
+            if (!fs.existsSync(c)) {
+                let l = newPath.replace(/\\/g, '/').replace('.min', '.vue');
+                if (fs.existsSync(l)) {
+                    compileFile(l);
+                }
+                l = newPath.replace(/\\/g, '/').replace('.min', '.ts');
+                if (fs.existsSync(l)) {
+                    const f = l;
+                    const d = compileTs(fs.readFileSync(f));
+                    const newFile = f.replace('.ts', '.min.js');
+                    saveFile(newFile, changeContent('(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();', newFile));
+                }
             }
-            l = newPath.replace(/\\/g, '/').replace('.min', '.ts');
-            if (fs.existsSync(l)) {
-                const f = l;
-                const d = compileTs(fs.readFileSync(f));
-                const newFile = f.replace('.ts', '.min.js');
-                saveFile(newFile, changeContent('(function () {var exports = {}; ' + d + ' define(function () {return exports;});})();', newFile));
-            }
+            const d = fs.readFileSync(c).toString();
+            const b = getRequireList(d, f);
+            data = readAllImport(b.list, newPath, origin).concat(data);
         }
-        const d = fs.readFileSync(c).toString();
-        const b = getRequireList(d);
-        data = readAllImport(b.list, newPath, origin).concat(data);
     });
     return data;
 }

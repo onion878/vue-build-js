@@ -1,7 +1,8 @@
 ## 说明 ##
 该工程是为了将.vue文件编译成js,同时将es6的语法编译为es5,可以在vue文件中使用import,如: <br>
-`import { getName } from './component/utils';` <br>
-`import List from "./component/list.vue";` <br>
+`import { getName } from './component/utils';` typescript <br>
+`import List from "./component/list.vue";` 自定义vue组件 <br>
+`import Chart from "../component/chart.min";` 三方js库<br>
 其中第一个是ts,第二个是vue组件 <br>
 
 ## 安装 ##

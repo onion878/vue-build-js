@@ -17,7 +17,18 @@ const {
 module.exports = function (f, arg, output) {
     file = f;
     target = output;
+    if (arg == 'init') {
+        initDist(file, target);
+        return;
+    }
     if (arg == 'all') {
+        if (!fs.existsSync(path.join(app_path, target))) {
+            fs.mkdirSync(path.join(app_path, target));
+        }
+        fs.writeFileSync(path.join(app_path, target, '/index.js'), compileTs(fs.readFileSync(path.join(__dirname, '/index.ts'))));
+        fs.writeFileSync(path.join(app_path, target, '/vue-loader.js'), compileTs(fs.readFileSync(path.join(__dirname, '/vue-loader.ts'))));
+        fs.copyFileSync(path.join(app_path, file, '/index.html'), path.join(app_path, target, '/index.html'));
+        fs.copyFileSync(path.join(app_path, file, '/route.json'), path.join(app_path, target, '/route.json'));
         getFiles(path.join(file, '/'), [".vue", ".ts"]);
         return;
     }
@@ -26,7 +37,7 @@ module.exports = function (f, arg, output) {
         persistent: true,
         usePolling: true,
     });
-    const watchAction = function ({event, eventPath}) {
+    const watchAction = function ({ event, eventPath }) {
         if (path.extname(eventPath) === '.vue') {
             log.info(`Has been ${event}ed, file: ${eventPath}`);
             // 这里进行文件更改后的操作
@@ -97,7 +108,8 @@ function compileTs(code) {
     const d = babel.transformSync(code, {
         filename: 'cache.build.ts',
         presets: ['@babel/preset-env', '@babel/preset-typescript'],
-        minified: true
+        minified: true,
+        "comments": false
     });
     return d.code;
 }
@@ -130,6 +142,7 @@ function compileFile(f) {
         }
         html = html + "\n" + c;
     });
+    html = html.trim();
     let style = "",
         flag = false;
     content.split('\n').some((c, i) => {
@@ -163,6 +176,9 @@ function compileFile(f) {
 
     if (script == null) {
         script = "{}";
+    }
+    if (html.substring(0, 10) == '<template>' && html.substring(html.length - 11, html.length) == '</template>') {
+        html = html.substring(10, html.length - 11);
     }
     const data = {
         script: script,
@@ -313,4 +329,27 @@ function readAllImport(list, f, origin) {
         }
     });
     return data;
+}
+
+function initDist(file, target) {
+    if (!fs.existsSync(path.join(app_path, file))) {
+        fs.mkdirSync(path.join(app_path, file));
+    }
+    if (!fs.existsSync(path.join(app_path, file, '/pages'))) {
+        fs.mkdirSync(path.join(app_path, file, '/pages'));
+    }
+    const route = [
+        {
+            "path": "/",
+            "component": "./pages/index"
+        },
+        {
+            "path": "/about",
+            "component": "./pages/about"
+        }
+    ];
+    fs.writeFileSync(path.join(app_path, file, '/route.json'), JSON.stringify(route, null, 2));
+    fs.copyFileSync(path.join(__dirname, '/index.html'), path.join(app_path, file, '/index.html'));
+    fs.copyFileSync(path.join(__dirname, '/index.vue'), path.join(app_path, file, '/pages/index.vue'));
+    fs.copyFileSync(path.join(__dirname, '/about.vue'), path.join(app_path, file, '/pages/about.vue'));
 }

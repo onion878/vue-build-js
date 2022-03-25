@@ -1,22 +1,20 @@
 <template>
-  <h1>Hello Test</h1>
+    <div>
+      <input v-model="name"/>
+      <h1>Hello {{name}}</h1>
+    </div>
 </template>
 
 <script lang="ts">
-import {getName} from "./utils";
-
 export default {
   data() {
     return {
-      name: "onion",
+      name: "World",
     };
   },
   methods: {
-    show() {
-    },
   },
   mounted() {
-    console.log(getName());
-  },
+  }
 };
 </script>

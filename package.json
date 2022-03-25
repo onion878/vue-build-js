@@ -1,6 +1,6 @@
 {
   "name": "vue-build-js",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "description": "vue文件编译为方便静态加载的js工程的cli",
   "main": "index.js",
   "bin": "./bin/main.js",

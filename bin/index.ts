@@ -1,4 +1,4 @@
-declare var Vue: any, VueRouter: any, getVueFile: any, axios: any;
+declare var Vue: any, VueRouter: any, getVueFile: any, axios: any, VueMountBefore: Function;
 // 初始化界面
 let url = 'route.json';
 if(window.location.href.indexOf('index.html') > -1) {
@@ -39,5 +39,8 @@ axios.get(url).then(({data}) => {
         }
     });
     app.use(router);
+    if(VueMountBefore != undefined) {
+        VueMountBefore(app);
+    }
     app.mount('#app');
 });

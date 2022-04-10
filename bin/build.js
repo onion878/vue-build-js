@@ -97,21 +97,31 @@ function getFiles(url, ext) {
 }
 
 function compileJs(code) {
-    const d = babel.transformSync(code, {
-        presets: ['@babel/preset-env'],
-        minified: true
-    });
-    return d.code;
+    try {
+        const d = babel.transformSync(code, {
+            presets: ['@babel/preset-env'],
+            minified: true
+        });
+        return d.code;
+    } catch (e) {
+        console.error(e);
+        return 'console.log(' + e.message + ');';
+    }
 }
 
 function compileTs(code) {
-    const d = babel.transformSync(code, {
-        filename: 'cache.build.ts',
-        presets: ['@babel/preset-env', '@babel/preset-typescript'],
-        minified: true,
-        "comments": false
-    });
-    return d.code;
+    try {
+        const d = babel.transformSync(code, {
+            filename: 'cache.build.ts',
+            presets: ['@babel/preset-env', '@babel/preset-typescript'],
+            minified: true,
+            "comments": false
+        });
+        return d.code;
+    } catch (e) {
+        console.error(e);
+        return 'console.log(' + e.message + ');';
+    }
 }
 
 function compileFile(f) {
